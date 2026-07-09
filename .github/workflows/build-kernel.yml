@@ -250,6 +250,13 @@ jobs:
             echo "CONFIG_CC_WERROR=n" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         fi
 
+    - name: Patch sched.h for OEM data conflict
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        # Remove duplicate last_switch_count/last_switch_time from the OEM _ANDROID_KABI_REPLACE
+        # since they're already defined under CONFIG_DETECT_HUNG_TASK
+        sed -i 's/unsigned long last_switch_count; unsigned long last_switch_time; //' include/linux/sched.h
+
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
       uses: hendrikmuhs/ccache-action@v1.2
