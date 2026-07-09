@@ -257,6 +257,11 @@ jobs:
         # since they're already defined under CONFIG_DETECT_HUNG_TASK
         sed -i 's/unsigned long last_switch_count; unsigned long last_switch_time; //' include/linux/sched.h
 
+    - name: Fix uninitialized retval in omnivision_tcm_i2c.c
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        sed -i 's/int retval;/int retval = 0;/g' drivers/input/touchscreen/omnivision_tcm/omnivision_tcm_i2c.c
+
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
       uses: hendrikmuhs/ccache-action@v1.2
