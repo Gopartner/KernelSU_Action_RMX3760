@@ -260,7 +260,20 @@ jobs:
         if [ ${{ env.DISABLE_CC_WERROR }} = true ]; then
             echo "CONFIG_CC_WERROR=n" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         fi
-        # NOTE: No custom config fixes for stock test build.
+        # Fix: SPRD_SYSDUMP=m but referenced by built-in code (smp.c, sprd_wdh.c). Change to =y.
+        sed -i 's/CONFIG_SPRD_SYSDUMP=m/CONFIG_SPRD_SYSDUMP=y/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+
+    - name: Fix sched.h duplicate fields (last_switch_count/time conflict with DETECT_HUNG_TASK)
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        # Vendor KABI_REPLACE adds same fields as CONFIG_DETECT_HUNG_TASK in anonymous union.
+        # Use conditional so when DETECT_HUNG_TASK=y, only used_for_hung_task is in the struct.
+        sed -i 's|^\([[:space:]]*\)_ANDROID_KABI_REPLACE(ANDROID_OEM_DATA_ARRAY(1, 3), struct{ unsigned long last_switch_count; unsigned long last_switch_time; unsigned long used_for_hung_task; });$|#if defined(CONFIG_DETECT_HUNG_TASK)\n\1_ANDROID_KABI_REPLACE(ANDROID_OEM_DATA_ARRAY(1, 3), struct{ unsigned long used_for_hung_task; });\n#else\n\1_ANDROID_KABI_REPLACE(ANDROID_OEM_DATA_ARRAY(1, 3), struct{ unsigned long last_switch_count; unsigned long last_switch_time; unsigned long used_for_hung_task; });\n#endif|' include/linux/sched.h
+
+    - name: Fix uninitialized retval in omnivision_tcm_i2c.c
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        sed -i 's/int retval;/int retval = 0;/g' drivers/input/touchscreen/omnivision_tcm/omnivision_tcm_i2c.c
 
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
