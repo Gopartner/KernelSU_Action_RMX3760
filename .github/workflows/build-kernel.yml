@@ -262,9 +262,12 @@ jobs:
         fi
         # Fix invalid =m symbols that cause linking errors
         sed -i 's/CONFIG_SPRD_SYSDUMP=m/CONFIG_SPRD_SYSDUMP=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+        sed -i 's/CONFIG_SPRD_MINI_SYSDUMP=y/CONFIG_SPRD_MINI_SYSDUMP=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         sed -i 's/CONFIG_SPRD_NATIVE_HANG_MONITOR=m/CONFIG_SPRD_NATIVE_HANG_MONITOR=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         sed -i 's/CONFIG_UNISOC_LASTKMSG=m/CONFIG_UNISOC_LASTKMSG=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         sed -i 's/CONFIG_UNISOC_DUMP_IO=m/CONFIG_UNISOC_DUMP_IO=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+        sed -i 's/CONFIG_USB_F_VSERIAL_BYPASS_USER=m/CONFIG_USB_F_VSERIAL_BYPASS_USER=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+        sed -i 's/CONFIG_PRINTK_CPUID=m/CONFIG_PRINTK_CPUID=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
 
     - name: Patch sched.h for OEM data conflict
       run: |
