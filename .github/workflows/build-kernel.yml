@@ -260,21 +260,7 @@ jobs:
         if [ ${{ env.DISABLE_CC_WERROR }} = true ]; then
             echo "CONFIG_CC_WERROR=n" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         fi
-        # Fix: SPRD_SYSDUMP=m but referenced by built-in code (smp.c, sprd_wdh.c). Change to =y.
-        sed -i 's/CONFIG_SPRD_SYSDUMP=m/CONFIG_SPRD_SYSDUMP=y/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-
-    - name: Disable DETECT_HUNG_TASK to avoid duplicate fields in sched.h
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        # _ANDROID_KABI_REPLACE_ already defines last_switch_count/last_switch_time
-        # which conflicts with CONFIG_DETECT_HUNG_TASK=y. Disable the duplicate.
-        sed -i '/CONFIG_DETECT_HUNG_TASK[= ]/d' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        echo "# CONFIG_DETECT_HUNG_TASK is not set" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-
-    - name: Fix uninitialized retval in omnivision_tcm_i2c.c
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        sed -i 's/int retval;/int retval = 0;/g' drivers/input/touchscreen/omnivision_tcm/omnivision_tcm_i2c.c
+        # NOTE: No custom config fixes for stock test build.
 
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
