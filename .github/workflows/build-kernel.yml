@@ -268,6 +268,14 @@ jobs:
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         sed -i 's/int retval;/int retval = 0;/g' drivers/input/touchscreen/omnivision_tcm/omnivision_tcm_i2c.c
 
+    - name: Fix invalid =m symbols in defconfig (SPRD_SYSDUMP etc.)
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        sed -i 's/CONFIG_SPRD_SYSDUMP=m/CONFIG_SPRD_SYSDUMP=n/' arch/arm64/configs/rmx3760_defconfig
+        sed -i 's/CONFIG_SPRD_NATIVE_HANG_MONITOR=m/CONFIG_SPRD_NATIVE_HANG_MONITOR=n/' arch/arm64/configs/rmx3760_defconfig
+        sed -i 's/CONFIG_UNISOC_LASTKMSG=m/CONFIG_UNISOC_LASTKMSG=n/' arch/arm64/configs/rmx3760_defconfig
+        sed -i 's/CONFIG_UNISOC_DUMP_IO=m/CONFIG_UNISOC_DUMP_IO=n/' arch/arm64/configs/rmx3760_defconfig
+
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
       uses: hendrikmuhs/ccache-action@v1.2
