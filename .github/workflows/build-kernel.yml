@@ -260,34 +260,21 @@ jobs:
         if [ ${{ env.DISABLE_CC_WERROR }} = true ]; then
             echo "CONFIG_CC_WERROR=n" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         fi
-        # Fix invalid =m symbols that cause linking errors
-        sed -i 's/CONFIG_SPRD_SYSDUMP=m/CONFIG_SPRD_SYSDUMP=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        sed -i 's/CONFIG_SPRD_MINI_SYSDUMP=y/CONFIG_SPRD_MINI_SYSDUMP=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        sed -i 's/CONFIG_SPRD_NATIVE_HANG_MONITOR=m/CONFIG_SPRD_NATIVE_HANG_MONITOR=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        sed -i 's/CONFIG_UNISOC_LASTKMSG=m/CONFIG_UNISOC_LASTKMSG=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        sed -i 's/CONFIG_UNISOC_DUMP_IO=m/CONFIG_UNISOC_DUMP_IO=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        sed -i 's/CONFIG_USB_F_VSERIAL_BYPASS_USER=m/CONFIG_USB_F_VSERIAL_BYPASS_USER=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
-        sed -i 's/CONFIG_PRINTK_CPUID=m/CONFIG_PRINTK_CPUID=n/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+        # Fix: SPRD_SYSDUMP=m but referenced by built-in code (smp.c, sprd_wdh.c). Change to =y.
+        sed -i 's/CONFIG_SPRD_SYSDUMP=m/CONFIG_SPRD_SYSDUMP=y/' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
 
-    - name: Patch sched.h for OEM data conflict
+    - name: Disable DETECT_HUNG_TASK to avoid duplicate fields in sched.h
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        # Remove duplicate last_switch_count/last_switch_time from the OEM _ANDROID_KABI_REPLACE
-        # since they're already defined under CONFIG_DETECT_HUNG_TASK
-        sed -i 's/unsigned long last_switch_count; unsigned long last_switch_time; //' include/linux/sched.h
+        # _ANDROID_KABI_REPLACE_ already defines last_switch_count/last_switch_time
+        # which conflicts with CONFIG_DETECT_HUNG_TASK=y. Disable the duplicate.
+        sed -i '/CONFIG_DETECT_HUNG_TASK[= ]/d' arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+        echo "# CONFIG_DETECT_HUNG_TASK is not set" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
 
     - name: Fix uninitialized retval in omnivision_tcm_i2c.c
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         sed -i 's/int retval;/int retval = 0;/g' drivers/input/touchscreen/omnivision_tcm/omnivision_tcm_i2c.c
-
-    - name: Patch sprd_wdh.c to guard sysdump_ipi calls with CONFIG_SPRD_SYSDUMP
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        sed -i 's/extern void sysdump_ipi(struct pt_regs \*regs);/#ifdef CONFIG_SPRD_SYSDUMP\nextern void sysdump_ipi(struct pt_regs *regs);\n#endif/' drivers/soc/sprd/debug/hang_debug/sprd_wdh.c
-        sed -i '/sysdump_ipi(pregs);/ {
-          /#ifdef CONFIG_SPRD_SYSDUMP/! s/\(.*\)sysdump_ipi(pregs);/#ifdef CONFIG_SPRD_SYSDUMP\n\1sysdump_ipi(pregs);\n#endif/
-        }' drivers/soc/sprd/debug/hang_debug/sprd_wdh.c
 
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
